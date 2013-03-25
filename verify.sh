@@ -27,10 +27,11 @@ cleanup() {
 }
 trap cleanup QUIT INT TERM EXIT
 
+SIG_TREE="$(git cat-file commit "grsec/v${GRSEC_VERSION}" | awk '$1=="Signature-Tree:" { print $2 }')"
 # Index diff only
-[ "$(sed -r '/^(---|\+\+\+|@@|-index|\+index) /d' <(git cat-file blob "grsec/v${GRSEC_VERSION}+diff") | wc -l)" -eq 0 ]
+[ "$(sed -r '/^(---|\+\+\+|@@|-index|\+index) /d' <(git cat-file blob "${SIG_TREE}:diff") | wc -l)" -eq 0 ]
 
 # PGP signature
 git diff --patience --full-index "v${LINUX_VERSION}" "grsec/v${GRSEC_VERSION}" > "${TMP}"
-patch "${TMP}" < <(git cat-file blob "grsec/v${GRSEC_VERSION}+diff") >/dev/null
-gpg --verify <(git cat-file blob "grsec/v${GRSEC_VERSION}+sig") "${TMP}"
+patch "${TMP}" < <(git cat-file blob "${SIG_TREE}:diff") >/dev/null
+gpg --verify <(git cat-file blob "${SIG_TREE}:sig") "${TMP}"
