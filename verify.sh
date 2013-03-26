@@ -14,7 +14,7 @@ if [ ! -d ".git" ]; then
 	usage
 fi
 
-GRSEC_PATCH="$(git cat-file commit HEAD | awk 'NR==6 && $1=="Import" { print $2 }')"
+GRSEC_PATCH="$(git log -1 --format=%s | awk '$1=="Import" { print $2 }')"
 LINUX_VERSION="$(echo "${GRSEC_PATCH}" | sed -nr 's/^grsecurity-[.0-9]+-([.0-9]+)-[0-9]+\.patch$/\1/p')"
 
 if [ -z "${LINUX_VERSION}" ]; then
