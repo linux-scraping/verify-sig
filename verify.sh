@@ -31,7 +31,7 @@ cleanup() {
 }
 trap cleanup QUIT INT TERM EXIT
 
-SIG_TREE="$(git cat-file commit HEAD | awk '$1=="Signature-Tree:" { print $2 }')"
+SIG_TREE="$(git cat-file commit HEAD | awk '$1=="Signature-tree:" { print $2 }')"
 # Index diff only
 [ "$(sed -r '/^(---|\+\+\+|@@|-index|\+index) /d' <(git cat-file blob "${SIG_TREE}:diff") | wc -l)" -eq 0 ]
 
