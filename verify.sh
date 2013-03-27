@@ -2,32 +2,29 @@
 
 usage() {
 	echo "Simple script to verify a grsecurity signature" >&2
-	echo "usage: $0 [linux-git-directory]" >&2
+	echo "usage: $0 [git-commit]" >&2
 	exit 1
 }
 
-GIT_DIR="${1:-.}"
-if ! cd "${GIT_DIR}"; then
-	usage
-fi
-if [ ! -d ".git" ]; then
-	usage
-fi
+COMMIT="${1:-HEAD}"
+git cat-file commit "${COMMIT}" >/dev/null
 
-GRSEC_PATCH="$(git log -1 --format=%s | awk '$1=="Import" { print $2 }')"
-SIG_TREE="$(git cat-file commit HEAD | awk '$1=="Signature-tree:" { print $2 }')"
+SIG_TREE="$(git cat-file commit "${COMMIT}" | awk '$1=="Signature-tree:" { print $2 }')"
 
 NEW_TREE="$(git cat-file blob "${SIG_TREE}:new")"
-[ "$(git cat-file commit HEAD | awk 'NR==1 && $1=="tree" { print $2 }')" == "${NEW_TREE}" ]
+[ "$(git cat-file commit "${COMMIT}" | awk 'NR==1 && $1=="tree" { print $2 }')" == "${NEW_TREE}" ]
 
 ORIG_TAG="$(git cat-file blob "${SIG_TREE}:orig")"
+PATCH="$(git log -1 --format=%s "${COMMIT}" | awk '$1=="Import" { print $2 }')"
+if [ -z "${PATCH}" ]; then
+	usage
+fi
 LINUX_VERSION="$(git describe "${ORIG_TAG}")"
-
 if [ -z "${LINUX_VERSION}" ]; then
 	usage
 fi
 
-echo "Patch: ${GRSEC_PATCH}"
+echo "Patch: ${PATCH}"
 echo "Linux: ${LINUX_VERSION}"
 
 TMP="$(mktemp 2>/dev/null || echo ./grsec.patch)"
