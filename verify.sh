@@ -56,6 +56,9 @@ echo "Patch: ${PATCH}"
 echo "Tree: ${NEW_TREE}"
 echo "Linux: ${LINUX_VERSION}"
 
+# Extra tag verification
+git verify-tag "${ORIG_TAG}"
+
 TMP="$(mktemp 2>/dev/null || echo ./grsec.patch)"
 cleanup() {
 	trap - QUIT INT TERM EXIT
