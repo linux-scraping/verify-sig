@@ -14,9 +14,11 @@ if [ ! -d ".git" ]; then
 	usage
 fi
 
-NEW_COMMIT="HEAD"
 GRSEC_PATCH="$(git log -1 --format=%s | awk '$1=="Import" { print $2 }')"
-SIG_TREE="$(git cat-file commit "${NEW_COMMIT}" | awk '$1=="Signature-tree:" { print $2 }')"
+SIG_TREE="$(git cat-file commit HEAD | awk '$1=="Signature-tree:" { print $2 }')"
+
+NEW_TREE="$(git cat-file blob "${SIG_TREE}:new")"
+[ "$(git cat-file commit HEAD | awk 'NR==1 && $1=="tree" { print $2 }')" == "${NEW_TREE}" ]
 
 ORIG_TAG="$(git cat-file blob "${SIG_TREE}:orig")"
 LINUX_VERSION="$(git describe "${ORIG_TAG}")"
@@ -39,6 +41,6 @@ trap cleanup QUIT INT TERM EXIT
 [ "$(sed -r '/^(---|\+\+\+|@@|-index|\+index) /d' <(git cat-file blob "${SIG_TREE}:diff") | wc -l)" -eq 0 ]
 
 # PGP signature
-git diff --patience --full-index "${ORIG_TAG}" "${NEW_COMMIT}" > "${TMP}"
+git diff --patience --full-index "${ORIG_TAG}" "${NEW_TREE}" > "${TMP}"
 patch "${TMP}" < <(git cat-file blob "${SIG_TREE}:diff") >/dev/null
 gpg --verify <(git cat-file blob "${SIG_TREE}:sig") "${TMP}"
