@@ -30,7 +30,9 @@ error() {
 }
 
 COMMIT="${1:-HEAD}"
-git cat-file commit "${COMMIT}" >/dev/null
+if ! git cat-file commit "${COMMIT}" &>/dev/null; then
+	usage "Bad commit"
+fi
 
 SIG_TREE="$(git cat-file commit "${COMMIT}" | awk '$1=="Signature-tree:" { print $2 }')"
 if [ -z "${SIG_TREE}" ]; then
@@ -42,14 +44,15 @@ if [ "$(git cat-file commit "${COMMIT}" | awk 'NR==1 && $1=="tree" { print $2 }'
 	error "Inconsistent commit and Signature-tree"
 fi
 
-ORIG_TAG="$(git cat-file blob "${SIG_TREE}:orig")"
 PATCH="$(git log -1 --format=%s "${COMMIT}" | awk '$1=="Import" { print $2 }')"
 if [ -z "${PATCH}" ]; then
 	usage "No patch import in commit"
 fi
+
+ORIG_TAG="$(git cat-file blob "${SIG_TREE}:orig")"
 LINUX_VERSION="$(git describe "${ORIG_TAG}")"
 if [ -z "${LINUX_VERSION}" ]; then
-	usage "No Linux tag"
+	error "No Linux tag"
 fi
 
 echo "Patch: ${PATCH}"
