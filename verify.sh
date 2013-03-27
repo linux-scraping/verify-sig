@@ -1,7 +1,25 @@
 #!/bin/bash -e
+#
+# verify.sh - Simple script to verify a grsecurity signature
+#
+# Copyright (C) 2013  Mickaël Salaün <mic@digikod.net>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details: <http://gnu.org/licenses/>.
+
 
 usage() {
-	echo "Simple script to verify a grsecurity signature" >&2
+	local msg="$1"
+	if [ -n "${msg}" ]; then
+		echo "${msg}"
+		echo
+	fi
 	echo "usage: $0 [git-commit]" >&2
 	exit 1
 }
@@ -10,6 +28,9 @@ COMMIT="${1:-HEAD}"
 git cat-file commit "${COMMIT}" >/dev/null
 
 SIG_TREE="$(git cat-file commit "${COMMIT}" | awk '$1=="Signature-tree:" { print $2 }')"
+if [ -z "${SIG_TREE}" ]; then
+	usage "No Signature-tree in commit"
+fi
 
 NEW_TREE="$(git cat-file blob "${SIG_TREE}:new")"
 [ "$(git cat-file commit "${COMMIT}" | awk 'NR==1 && $1=="tree" { print $2 }')" == "${NEW_TREE}" ]
@@ -17,11 +38,11 @@ NEW_TREE="$(git cat-file blob "${SIG_TREE}:new")"
 ORIG_TAG="$(git cat-file blob "${SIG_TREE}:orig")"
 PATCH="$(git log -1 --format=%s "${COMMIT}" | awk '$1=="Import" { print $2 }')"
 if [ -z "${PATCH}" ]; then
-	usage
+	usage "No patch import in commit"
 fi
 LINUX_VERSION="$(git describe "${ORIG_TAG}")"
 if [ -z "${LINUX_VERSION}" ]; then
-	usage
+	usage "No Linux tag"
 fi
 
 echo "Patch: ${PATCH}"
