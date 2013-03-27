@@ -19,7 +19,7 @@ GRSEC_PATCH="$(git log -1 --format=%s | awk '$1=="Import" { print $2 }')"
 SIG_TREE="$(git cat-file commit "${NEW_COMMIT}" | awk '$1=="Signature-tree:" { print $2 }')"
 
 ORIG_TAG="$(git cat-file blob "${SIG_TREE}:orig")"
-LINUX_VERSION="$(git desc "${ORIG_TAG}")"
+LINUX_VERSION="$(git describe "${ORIG_TAG}")"
 
 if [ -z "${LINUX_VERSION}" ]; then
 	usage
