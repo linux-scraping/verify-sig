@@ -24,6 +24,11 @@ usage() {
 	exit 1
 }
 
+error() {
+	echo "$*" >&2
+	exit 1
+}
+
 COMMIT="${1:-HEAD}"
 git cat-file commit "${COMMIT}" >/dev/null
 
@@ -33,7 +38,9 @@ if [ -z "${SIG_TREE}" ]; then
 fi
 
 NEW_TREE="$(git cat-file blob "${SIG_TREE}:new")"
-[ "$(git cat-file commit "${COMMIT}" | awk 'NR==1 && $1=="tree" { print $2 }')" == "${NEW_TREE}" ]
+if [ "$(git cat-file commit "${COMMIT}" | awk 'NR==1 && $1=="tree" { print $2 }')" != "${NEW_TREE}" ]; then
+	error "Inconsistent commit and Signature-tree"
+fi
 
 ORIG_TAG="$(git cat-file blob "${SIG_TREE}:orig")"
 PATCH="$(git log -1 --format=%s "${COMMIT}" | awk '$1=="Import" { print $2 }')"
@@ -57,7 +64,9 @@ cleanup() {
 trap cleanup QUIT INT TERM EXIT
 
 # Index diff only
-[ "$(sed -r '/^(---|\+\+\+|@@|-index|\+index) /d' <(git cat-file blob "${SIG_TREE}:diff") | wc -l)" -eq 0 ]
+if [ "$(sed -r '/^(---|\+\+\+|@@|-index|\+index) /d' <(git cat-file blob "${SIG_TREE}:diff") | wc -l)" -ne 0 ]; then
+	error "Suspicious Signature-tree content"
+fi
 
 # PGP signature
 git diff --patience --full-index "${ORIG_TAG}" "${NEW_TREE}" > "${TMP}"
