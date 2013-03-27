@@ -46,6 +46,7 @@ if [ -z "${LINUX_VERSION}" ]; then
 fi
 
 echo "Patch: ${PATCH}"
+echo "Tree: ${NEW_TREE}"
 echo "Linux: ${LINUX_VERSION}"
 
 TMP="$(mktemp 2>/dev/null || echo ./grsec.patch)"
