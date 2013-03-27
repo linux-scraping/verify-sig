@@ -14,15 +14,19 @@ if [ ! -d ".git" ]; then
 	usage
 fi
 
+NEW_COMMIT="HEAD"
 GRSEC_PATCH="$(git log -1 --format=%s | awk '$1=="Import" { print $2 }')"
-LINUX_VERSION="$(echo "${GRSEC_PATCH}" | sed -nr 's/^grsecurity-[.0-9]+-([.0-9]+)-[0-9]+\.patch$/\1/p')"
+SIG_TREE="$(git cat-file commit "${NEW_COMMIT}" | awk '$1=="Signature-tree:" { print $2 }')"
+
+ORIG_TAG="$(git cat-file blob "${SIG_TREE}:orig")"
+LINUX_VERSION="$(git desc "${ORIG_TAG}")"
 
 if [ -z "${LINUX_VERSION}" ]; then
 	usage
 fi
 
 echo "Patch: ${GRSEC_PATCH}"
-echo "Linux: v${LINUX_VERSION}"
+echo "Linux: ${LINUX_VERSION}"
 
 TMP="$(mktemp 2>/dev/null || echo ./grsec.patch)"
 cleanup() {
@@ -31,11 +35,10 @@ cleanup() {
 }
 trap cleanup QUIT INT TERM EXIT
 
-SIG_TREE="$(git cat-file commit HEAD | awk '$1=="Signature-tree:" { print $2 }')"
 # Index diff only
 [ "$(sed -r '/^(---|\+\+\+|@@|-index|\+index) /d' <(git cat-file blob "${SIG_TREE}:diff") | wc -l)" -eq 0 ]
 
 # PGP signature
-git diff --patience --full-index "v${LINUX_VERSION}" HEAD > "${TMP}"
+git diff --patience --full-index "${ORIG_TAG}" "${NEW_COMMIT}" > "${TMP}"
 patch "${TMP}" < <(git cat-file blob "${SIG_TREE}:diff") >/dev/null
 gpg --verify <(git cat-file blob "${SIG_TREE}:sig") "${TMP}"
