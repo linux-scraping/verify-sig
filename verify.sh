@@ -50,7 +50,7 @@ if [ -z "${PATCH}" ]; then
 fi
 
 ORIG_TAG="$(git cat-file blob "${SIG_TREE}:orig")"
-LINUX_VERSION="$(git describe "${ORIG_TAG}")"
+LINUX_VERSION="$(git describe -- "${ORIG_TAG}")"
 if [ -z "${LINUX_VERSION}" ]; then
 	error "No Linux tag"
 fi
@@ -62,17 +62,17 @@ echo "Linux: ${LINUX_VERSION}"
 # Extra tag verification
 git verify-tag "${ORIG_TAG}"
 
+# Index diff only
+if [ "$(sed -r '/^(---|\+\+\+|@@|-index|\+index) /d' <(git cat-file blob "${SIG_TREE}:diff") | wc -l)" -ne 0 ]; then
+	error "Suspicious Signature-tree content"
+fi
+
 TMP="$(mktemp 2>/dev/null || echo ./grsec.patch)"
 cleanup() {
 	trap - QUIT INT TERM EXIT
 	rm -f -- "${TMP}" 2>/dev/null
 }
 trap cleanup QUIT INT TERM EXIT
-
-# Index diff only
-if [ "$(sed -r '/^(---|\+\+\+|@@|-index|\+index) /d' <(git cat-file blob "${SIG_TREE}:diff") | wc -l)" -ne 0 ]; then
-	error "Suspicious Signature-tree content"
-fi
 
 # PGP signature
 git diff --patience --full-index "${ORIG_TAG}" "${NEW_TREE}" > "${TMP}"
