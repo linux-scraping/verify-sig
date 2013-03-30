@@ -63,7 +63,7 @@ echo "Linux: ${LINUX_VERSION}"
 git verify-tag "${ORIG_TAG}"
 
 # Index diff only
-if [ "$(sed -r '/^(---|\+\+\+|@@|-index|\+index) /d' <(git cat-file blob "${SIG_TREE}:diff") | wc -l)" -ne 0 ]; then
+if [ "$(sed -r '/^(---|\+\+\+|@@|-index|\+index) /d' <(git cat-file blob "${SIG_TREE}:delta") | wc -l)" -ne 0 ]; then
 	error "Suspicious Signature-tree content"
 fi
 
@@ -76,5 +76,5 @@ trap cleanup QUIT INT TERM EXIT
 
 # PGP signature
 git diff --patience --full-index "${ORIG_TAG}" "${NEW_TREE}" > "${TMP}"
-patch "${TMP}" < <(git cat-file blob "${SIG_TREE}:diff") >/dev/null
+patch "${TMP}" < <(git cat-file blob "${SIG_TREE}:delta") >/dev/null
 gpg --verify <(git cat-file blob "${SIG_TREE}:sig") "${TMP}"
