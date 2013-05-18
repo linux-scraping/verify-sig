@@ -44,7 +44,7 @@ if [ "$(git cat-file commit "${COMMIT}" | awk 'NR==1 && $1=="tree" { print $2 }'
 	error "Inconsistent commit and Signature-tree"
 fi
 
-PATCH="$(git log -1 --format=%s "${COMMIT}" | awk '$1=="Import" { print $2 }')"
+PATCH="$(git log -1 --format=%s "${COMMIT}" | awk '$1=="grsec:" && $2=="Import" { print $3 }')"
 if [ -z "${PATCH}" ]; then
 	usage "No patch import in commit"
 fi
@@ -54,6 +54,10 @@ LINUX_VERSION="$(git describe -- "${ORIG_TAG}")"
 if [ -z "${LINUX_VERSION}" ]; then
 	error "No Linux tag"
 fi
+
+#DIFF_OPTS="$(git cat-file blob "${SIG_TREE}:params")"
+#if [ "$(echo -n "${DIFF_OPTS}" | sed -r 's/(--(patience|full-index) ?)+/'
+
 
 echo "Patch: ${PATCH}"
 echo "Tree: ${NEW_TREE}"
