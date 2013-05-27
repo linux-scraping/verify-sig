@@ -25,8 +25,12 @@ usage() {
 }
 
 error() {
-	echo "$*" >&2
+	echo "ERROR: $*" >&2
 	exit 1
+}
+
+warning() {
+	echo "WARNING: $*" >&2
 }
 
 COMMIT="${1:-HEAD}"
@@ -68,7 +72,12 @@ git verify-tag "${ORIG_TAG}"
 
 # Index diff only
 if [ "$(sed -r '/^(---|\+\+\+|@@|-index|\+index) /d' <(git cat-file blob "${SIG_TREE}:delta") | wc -l)" -ne 0 ]; then
-	error "Suspicious Signature-tree content"
+	err="Suspicious Signature-tree content"
+	if [[ "${TRUST_DELTA}" != "yes" ]]; then
+		error "${err}"
+	else
+		warning "${err}"
+	fi
 fi
 
 TMP="$(mktemp 2>/dev/null || echo ./grsec.patch)"
