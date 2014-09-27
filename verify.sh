@@ -38,7 +38,7 @@ if ! git cat-file commit "${COMMIT}" &>/dev/null; then
 	usage "Bad commit"
 fi
 
-SIG_TREE="$(git cat-file commit "${COMMIT}" | awk '$1=="Signature-tree:" { print $2 }')"
+SIG_TREE="$(git cat-file commit "${COMMIT}" | awk 'END { if ($1=="Signature-tree:") print $2 }')"
 if [ -z "${SIG_TREE}" ]; then
 	usage "No Signature-tree in commit"
 fi
@@ -48,7 +48,7 @@ if [ "$(git cat-file commit "${COMMIT}" | awk 'NR==1 && $1=="tree" { print $2 }'
 	error "Inconsistent commit and Signature-tree"
 fi
 
-PATCH="$(git log -1 --format=%s "${COMMIT}" | awk '$1=="grsec:" && $2=="Apply" { print $3 }')"
+PATCH="$(git log -1 --format=%s "${COMMIT}" | awk 'NR==1 && $1=="grsec:" && $2=="Apply" { print $3 }')"
 if [ -z "${PATCH}" ]; then
 	usage "No patch import in commit"
 fi
