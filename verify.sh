@@ -48,7 +48,7 @@ if [ "$(git cat-file commit "${COMMIT}" | awk 'NR==1 && $1=="tree" { print $2 }'
 	error "Inconsistent commit and Signature-tree"
 fi
 
-PATCH="$(git log -1 --format=%s "${COMMIT}" | awk 'NR==1 && $1=="grsec:" && $2=="Apply" { print $3 }')"
+PATCH="$(git log --no-walk --max-count=1 --pretty=format:%s "${COMMIT}" | awk 'NR==1 && $1=="grsec:" && $2=="Apply" { print $3 }')"
 if [ -z "${PATCH}" ]; then
 	usage "No patch import in commit"
 fi
